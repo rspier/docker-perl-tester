@@ -3,8 +3,6 @@
 name: Publish to Docker
 on:
   push:
-    branches:
-      - "main"
   schedule:
     - cron: "10 6 * * *"
   workflow_dispatch:
@@ -72,12 +70,14 @@ jobs:
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: ${{ secrets.DOCKER_REPO }}
+          name: ${{ secrets.DOCKER_REPO || 'not-a-real-image' }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_GITHUB_TOKEN }}
           dockerfile: Dockerfile
           buildargs: BASE=${{ matrix.perl-version }}-buster,CPANOUTDATED=1
           tags: "${{ matrix.perl-version }}-buster,${{ matrix.perl-version }}"
+          # only push to registry on scheduled builds or other triggers
+          no_push: ${{ github.event_name == 'push' }}
 
   build-bookworm:
     name: "Build versions for bookworm"
@@ -94,9 +94,12 @@ jobs:
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: ${{ secrets.DOCKER_REPO }}
+          name: ${{ secrets.DOCKER_REPO || 'not-a-real-image' }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_GITHUB_TOKEN }}
           dockerfile: Dockerfile
           buildargs: BASE=${{ matrix.perl-version }}-slim-bookworm,CPANOUTDATED=1
           tags: "${{ matrix.perl-version }}-slim-bookworm"
+          # only push to registry on scheduled builds or other triggers
+          no_push: ${{ github.event_name == 'push' }}
+
